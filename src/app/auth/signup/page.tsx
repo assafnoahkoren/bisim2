@@ -2,17 +2,42 @@
 
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import Link from "next/link";
+import {
+  Container,
+  Paper,
+  TextInput,
+  PasswordInput,
+  Button,
+  Title,
+  Text,
+  Anchor,
+  Stack,
+  Divider,
+  Box,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
+import {
+  IconUserPlus,
+  IconBrandDiscord,
+  IconCheck,
+  IconX,
+} from "@tabler/icons-react";
 import { api } from "~/trpc/react";
 
 export default function SignUp() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   
   const signupMutation = api.auth.signup.useMutation({
     onSuccess: async (data, variables) => {
+      notifications.show({
+        title: "Account created",
+        message: "Signing you in...",
+        color: "green",
+        icon: <IconCheck size={16} />,
+      });
+      
       const result = await signIn("credentials", {
         email: variables.email,
         password: variables.password,
@@ -25,123 +50,107 @@ export default function SignUp() {
       }
     },
     onError: (error) => {
-      setError(error.message);
+      notifications.show({
+        title: "Registration failed",
+        message: error.message,
+        color: "red",
+        icon: <IconX size={16} />,
+      });
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const form = useForm({
+    initialValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validate: {
+      email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
+      password: (value) =>
+        value.length >= 6 ? null : "Password must be at least 6 characters",
+      confirmPassword: (value, values) =>
+        value === values.password ? null : "Passwords do not match",
+    },
+  });
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const name = formData.get("name") as string;
-
-    signupMutation.mutate({ email, password, name });
-    setLoading(false);
+  const handleSubmit = (values: typeof form.values) => {
+    signupMutation.mutate({
+      email: values.email,
+      password: values.password,
+      name: values.name || undefined,
+    });
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white/10 p-8 backdrop-blur">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-300">
-            Or{" "}
-            <Link
-              href="/auth/signin"
-              className="font-medium text-[hsl(280,100%,70%)] hover:text-[hsl(280,100%,80%)]"
-            >
-              sign in to existing account
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label htmlFor="name" className="sr-only">
-                Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                className="relative block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-[hsl(280,100%,70%)] focus:outline-none focus:ring-[hsl(280,100%,70%)] sm:text-sm"
-                placeholder="Name (optional)"
+    <Box bg="gray.0" mih="100vh">
+      <Container size={420} pt={100}>
+        <Title ta="center" fw={900}>
+          Create your account
+        </Title>
+        <Text c="dimmed" size="sm" ta="center" mt={5}>
+          Already have an account?{" "}
+          <Anchor size="sm" component={Link} href="/auth/signin">
+            Sign in
+          </Anchor>
+        </Text>
+
+        <Paper withBorder shadow="md" p={30} mt={30} radius="md">
+          <form onSubmit={form.onSubmit(handleSubmit)}>
+            <Stack>
+              <TextInput
+                label="Name"
+                placeholder="Your name (optional)"
+                {...form.getInputProps("name")}
               />
-            </div>
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
+
+              <TextInput
+                label="Email"
+                placeholder="your@email.com"
                 required
-                className="relative block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-[hsl(280,100%,70%)] focus:outline-none focus:ring-[hsl(280,100%,70%)] sm:text-sm"
-                placeholder="Email address"
+                {...form.getInputProps("email")}
               />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
+
+              <PasswordInput
+                label="Password"
+                placeholder="Create a password"
                 required
-                minLength={6}
-                className="relative block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-[hsl(280,100%,70%)] focus:outline-none focus:ring-[hsl(280,100%,70%)] sm:text-sm"
-                placeholder="Password (min 6 characters)"
+                {...form.getInputProps("password")}
               />
-            </div>
-          </div>
 
-          {error && (
-            <div className="rounded-md bg-red-900/50 p-3 text-sm text-red-200">
-              {error}
-            </div>
-          )}
+              <PasswordInput
+                label="Confirm password"
+                placeholder="Confirm your password"
+                required
+                {...form.getInputProps("confirmPassword")}
+              />
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading || signupMutation.isPending}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-[hsl(280,100%,70%)] px-4 py-2 text-sm font-medium text-white hover:bg-[hsl(280,100%,60%)] focus:outline-none focus:ring-2 focus:ring-[hsl(280,100%,70%)] focus:ring-offset-2 disabled:opacity-50"
-            >
-              {loading || signupMutation.isPending ? "Creating account..." : "Sign up"}
-            </button>
-          </div>
+              <Button
+                fullWidth
+                type="submit"
+                loading={signupMutation.isPending}
+                leftSection={<IconUserPlus size={16} />}
+              >
+                Create account
+              </Button>
+            </Stack>
+          </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-600" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-transparent px-2 text-gray-400">Or continue with</span>
-            </div>
-          </div>
+          {/* <Divider label="Or continue with" labelPosition="center" my="lg" />
 
-          <div>
-            <button
-              type="button"
+          <Stack>
+            <Button
+              fullWidth
+              variant="default"
+              leftSection={<IconBrandDiscord size={16} />}
               onClick={() => signIn("discord", { callbackUrl: "/" })}
-              className="group relative flex w-full justify-center rounded-md border border-gray-600 bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-[hsl(280,100%,70%)] focus:ring-offset-2"
             >
-              Sign up with Discord
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              Discord
+            </Button>
+          </Stack> */}
+        </Paper>
+      </Container>
+    </Box>
   );
 }

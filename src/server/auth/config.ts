@@ -34,7 +34,7 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
-    DiscordProvider,
+    // DiscordProvider,
     CredentialsProvider({
       name: "credentials",
       credentials: {

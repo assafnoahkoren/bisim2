@@ -4,127 +4,134 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import {
+  Container,
+  Paper,
+  TextInput,
+  PasswordInput,
+  Button,
+  Title,
+  Text,
+  Anchor,
+  Stack,
+  Divider,
+  Box,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
+import {
+  IconLogin,
+  IconBrandDiscord,
+  IconAlertCircle,
+} from "@tabler/icons-react";
 
 export default function SignIn() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const form = useForm({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validate: {
+      email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
+      password: (value) => (value.length > 0 ? null : "Password is required"),
+    },
+  });
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+  const handleSubmit = async (values: typeof form.values) => {
+    setLoading(true);
 
     try {
       const result = await signIn("credentials", {
-        email,
-        password,
+        email: values.email,
+        password: values.password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        notifications.show({
+          title: "Authentication failed",
+          message: "Invalid email or password",
+          color: "red",
+          icon: <IconAlertCircle size={16} />,
+        });
       } else {
+        notifications.show({
+          title: "Success",
+          message: "You have been signed in successfully",
+          color: "green",
+        });
         router.push("/");
         router.refresh();
       }
     } catch {
-      setError("An error occurred. Please try again.");
+      notifications.show({
+        title: "Error",
+        message: "An unexpected error occurred. Please try again.",
+        color: "red",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white/10 p-8 backdrop-blur">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-300">
-            Or{" "}
-            <Link
-              href="/auth/signup"
-              className="font-medium text-[hsl(280,100%,70%)] hover:text-[hsl(280,100%,80%)]"
-            >
-              create a new account
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <input type="hidden" name="remember" defaultValue="true" />
-          <div className="-space-y-px rounded-md shadow-sm">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
+    <Box bg="gray.0" mih="100vh">
+      <Container size={420} pt={100}>
+        <Title ta="center" fw={900}>
+          Welcome back!
+        </Title>
+        <Text c="dimmed" size="sm" ta="center" mt={5}>
+          Do not have an account yet?{" "}
+          <Anchor size="sm" component={Link} href="/auth/signup">
+            Create account
+          </Anchor>
+        </Text>
+
+        <Paper withBorder shadow="md" p={30} mt={30} radius="md">
+          <form onSubmit={form.onSubmit(handleSubmit)}>
+            <Stack>
+              <TextInput
+                label="Email"
+                placeholder="your@email.com"
                 required
-                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-[hsl(280,100%,70%)] focus:outline-none focus:ring-[hsl(280,100%,70%)] sm:text-sm"
-                placeholder="Email address"
+                {...form.getInputProps("email")}
               />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
+
+              <PasswordInput
+                label="Password"
+                placeholder="Your password"
                 required
-                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-[hsl(280,100%,70%)] focus:outline-none focus:ring-[hsl(280,100%,70%)] sm:text-sm"
-                placeholder="Password"
+                {...form.getInputProps("password")}
               />
-            </div>
-          </div>
 
-          {error && (
-            <div className="rounded-md bg-red-900/50 p-3 text-sm text-red-200">
-              {error}
-            </div>
-          )}
+              <Button
+                fullWidth
+                type="submit"
+                loading={loading}
+                leftSection={<IconLogin size={16} />}
+              >
+                Sign in
+              </Button>
+            </Stack>
+          </form>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-[hsl(280,100%,70%)] px-4 py-2 text-sm font-medium text-white hover:bg-[hsl(280,100%,60%)] focus:outline-none focus:ring-2 focus:ring-[hsl(280,100%,70%)] focus:ring-offset-2 disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </div>
+          {/* <Divider label="Or continue with" labelPosition="center" my="lg" />
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-600" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-transparent px-2 text-gray-400">Or continue with</span>
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="button"
+          <Stack>
+            <Button
+              fullWidth
+              variant="default"
+              leftSection={<IconBrandDiscord size={16} />}
               onClick={() => signIn("discord", { callbackUrl: "/" })}
-              className="group relative flex w-full justify-center rounded-md border border-gray-600 bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-[hsl(280,100%,70%)] focus:ring-offset-2"
             >
-              Sign in with Discord
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              Discord
+            </Button>
+          </Stack> */}
+        </Paper>
+      </Container>
+    </Box>
   );
 }
