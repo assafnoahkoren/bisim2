@@ -18,7 +18,7 @@ import {
 } from "@tabler/icons-react";
 
 import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
+import { HydrateClient } from "~/trpc/server";
 
 export default async function Home() {
   const session = await auth();
@@ -58,9 +58,9 @@ export default async function Home() {
                     <>
                       <Group gap="sm">
                         <Avatar color="blue" radius="xl">
-                          {session.user.name?.[0]?.toUpperCase() || "U"}
+                          {session.user.name?.[0]?.toUpperCase() ?? "U"}
                         </Avatar>
-                        <Text fw={500}>{session.user.name || session.user.email}</Text>
+                        <Text fw={500}>{session.user.name ?? session.user.email}</Text>
                       </Group>
                       <Button
                         component={Link}
@@ -99,9 +99,9 @@ export default async function Home() {
             {session?.user && (
               <Paper radius="md" p="xl" withBorder>
                 <Stack align="center" gap="md">
-                  <Title order={3}>Welcome back, {session.user.name || "User"}!</Title>
+                  <Title order={3}>Welcome back, {session.user.name ?? "User"}!</Title>
                   <Text c="dimmed" ta="center">
-                    You're successfully logged in. Start building your application here.
+                    You&apos;re successfully logged in. Start building your application here.
                   </Text>
                 </Stack>
               </Paper>

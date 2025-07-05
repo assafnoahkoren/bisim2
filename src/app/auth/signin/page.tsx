@@ -14,14 +14,12 @@ import {
   Text,
   Anchor,
   Stack,
-  Divider,
   Box,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
   IconLogin,
-  IconBrandDiscord,
   IconAlertCircle,
 } from "@tabler/icons-react";
 
